@@ -2,5 +2,5 @@
 *.log
 ./save
 ./tmp
-./__pycache
+__pycache__
 *.txt
