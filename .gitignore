@@ -1,0 +1,6 @@
+*.json
+*.log
+./save
+./tmp
+./__pycache
+*.txt
