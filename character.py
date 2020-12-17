@@ -71,7 +71,7 @@ class character(Basic_Panel):
 
         for i in range(1,self.constellation+1):
             self.activated_buff.append("c"+str(i))
-        with open(path, 'r') as fp:
+        with open(path, 'r', encoding='UTF-8') as fp:
             data = json.load(fp)
 
         self.name = data['name']
