@@ -1,7 +1,6 @@
 *.json
-*.log
 ./save
-./tmp
+tmp
 __pycache__
 *.txt
 save/.DS_Store
