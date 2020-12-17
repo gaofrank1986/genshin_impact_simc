@@ -8,7 +8,8 @@ from basic import Basic_Panel,relics,weapon
 import os
 
 class character(Basic_Panel):
-    def __init__(self,skill_level,c_level):
+    def __init__(self,skill_level,c_level,main_logger):
+        assert(isinstance(main_logger,logging.Logger))
         super().__init__()
         self.name = ''
 
@@ -22,6 +23,8 @@ class character(Basic_Panel):
         self.attack[4] = 50
 
         self.action_seq = ''
+
+        self.main_logger = main_logger
         #-------------
         self.multiple_e = 1 #可莉砂糖E可以放两次
         # self.e_time_out = 3 #迪卢克多段e间隔时间
@@ -38,9 +41,6 @@ class character(Basic_Panel):
         self.acc ={'e':0,'a':0,'q':0}
         self.next_atk = {'e':0.0,'a':0.0,'q':0.0}
 
-        # self.next_atk['e'] = 0.0
-        # self.next_atk['q'] = 0.0
-        # self.next_atk['a'] = 0.0
         # self.status['e'] = 'on'
 
         self.activated_buff =['q','e']
@@ -99,10 +99,10 @@ class character(Basic_Panel):
         for i in data['skills'].keys():
             if i in self.activated_buff:
                 if len(data['skills'][i][0])!=0:
-                    print("加载 2类 {} {} {} ".format(self.name,buff_name[i],data['skills'][i][2]))
+                    self.main_logger.info("加载 2类 {} {} {} ".format(self.name,buff_name[i],data['skills'][i][2]))
                     self.add_buff(Buff(data['skills'][i][0],data['skills'][i][1],"{}_{}".format(self.name,buff_name[i]),data['skills'][i][2]))
                 else:
-                    print("加载 1类 {} {} {} ".format(self.name,buff_name[i],data['skills'][i][2]))
+                    self.main_logger.info("加载 1类 {} {} {} ".format(self.name,buff_name[i],data['skills'][i][2]))
                     self.load_att(data['skills'][i][1])
 
 

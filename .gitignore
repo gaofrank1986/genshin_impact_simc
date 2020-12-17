@@ -4,3 +4,6 @@
 ./tmp
 __pycache__
 *.txt
+save/.DS_Store
+tmp/.DS_Store
+.DS_Store
