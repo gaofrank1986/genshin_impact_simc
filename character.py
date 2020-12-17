@@ -49,6 +49,7 @@ class Character(Basic_Panel):
         self.buff_stack = []
 
         self.dmg = np.zeros(4) # AD HD E Q     '元素伤害 ED?
+        self.dmg2 = np.zeros(2) #physic elem
 
 
 
@@ -286,10 +287,14 @@ class Character(Basic_Panel):
 
         if atk_type=='a': # 平A注意速度和附魔
             speed = ans.get('speed',0)
-            ele = ans.get('enchant',0)
+            if ans.get('enchant',0) == 1:
+                ele = self.elem_class
+            else:
+                ele = self.atk_elem(atk_type)
+            
         else:
             speed = 0
-            ele = 0
+            ele = self.atk_elem(atk_type)
         
 
         D=self.damage_output(ans,atk_type,True) #计算总伤害
@@ -323,15 +328,18 @@ class Character(Basic_Panel):
 
         # 平A多攻速输出
         if (atk_type!='a'):
-            logger.info("{} {}计数: {},start: {:.2f} ,元素属性 {}, s= {},输出方式 {} D= {:.2f} 倍率 {:.2f} 消耗时间 {:.2f} 冷却到期:{:.2f}".format(self.name,atk_type,self.acc[atk_type],env.now(),ele,s,N,D,ratio,lapse,self.next_atk[atk_type]))
+            logger.info("{} {}计数: {},start: {:.2f} ,冷却到期:{:.2f}, {} D= {:.2f} 倍率 {:.2f} 消耗时间 {:.2f} ".format(self.name,atk_type,self.acc[atk_type],env.now(),self.next_atk[atk_type],ele,D,ratio,lapse))
 
         else:
-            logger.info("{} {}计数: {},start: {:.2f} ,元素属性 {}, s= {},输出方式 {} D= {:.2f} 倍率 {:.2f} 消耗时间 {:.2f} 冷却到期:{:.2f} 攻速: {}".format(self.name,atk_type,self.acc[atk_type],env.now(),ele,s,N,D,ratio,lapse,self.next_atk[atk_type],speed))
+            logger.info("{} {}计数: {},start: {:.2f} ,冷却到期:{:.2f}, {} D= {:.2f} 倍率 {:.2f} 消耗时间 {:.2f}  攻速: {}".format(self.name,atk_type,self.acc[atk_type],env.now(),self.next_atk[atk_type],ele,D,ratio,lapse,speed))
 
         self.last_atk[atk_type] = env.now()
         env.tick(lapse) #环境时间更新，迭代量为技能时间
         self.dmg[['a','h','e','q'].index(atk_type)]+=round(D,2)
-
+        if ele == 'physic':
+            self.dmg2[0]+=round(D,2)
+        else:
+            self.dmg2[1]+=round(D,2)
         # '''TODO a 释放完超过一定时间多段攻击会被重置         '''
         if atk_type=='q':
             self.acc['a'] = 0
@@ -352,3 +360,8 @@ class Character(Basic_Panel):
                 pass
         return False
 
+    def atk_elem(self,atk_type):
+        if self.skill[atk_type][4] == 'elem':
+            return self.elem_class
+        else:
+            return "physic"

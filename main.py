@@ -26,8 +26,8 @@ if __name__ == "__main__":
 
 
     env = Env()
-    # env.set_endtime(100)
-    cycle = 10
+    env.set_endtime(200)
+    cycle = 20
     c = Character(6,6,logger)
     a = Articraft()
     c.load_from_json("./data/diluc.json")
@@ -40,10 +40,14 @@ if __name__ == "__main__":
 
 
 
-    input()
+    # input()
 
+    exit_flag = False
     for j in range(cycle):
+        if exit_flag:
+            break
         for i in range(len(c.action_seq)):
+            
             action = c.action_seq[i]
             # if action=='w':
             #     env.tick(0.2)
@@ -57,6 +61,10 @@ if __name__ == "__main__":
                     env.set(c.last_atk[action]+c.guarantee_gap[action])
                     
             while True:
+                if env.end():
+                    logger.info("time is up.")
+                    exit_flag = True
+                    break
                 if c.atk_ready(env,[action]):
                     break
                 else:
@@ -64,9 +72,13 @@ if __name__ == "__main__":
                     # env.tick(0.1)
                     logger.info("{} is not ready, 平a补空.".format(action))
                     c.generic_atk('a',env,logger)
-
+            if exit_flag:
+                break
 
             c.generic_atk(action,env,logger)
+    logger.info("DPS：{}".format(c.dmg.sum()/env.now()))
+    logger.info("damage dist1：{}".format(c.dmg))
+    logger.info("damage dist2：{}".format(c.dmg2))
 
     # for i in range(50000):
     #     if env.end():
