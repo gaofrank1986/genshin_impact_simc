@@ -123,3 +123,33 @@ def generate_relics3():
         json.dump(ans, fp,indent = 4)
 
     return(ans)
+
+    # def json_generator(path,na,ne):
+    #     tmp = dict()
+    #     tmp['name'] = ''
+    #     tmp['level'] = ''
+    #     tmp['elem_class'] = ''
+    #     tmp['constellation'] = ''
+
+    #     tmp['basic_health'] = 0
+    #     tmp['basic_attack'] = 0
+    #     tmp['basic_defense'] = 0
+    #     tmp['break_thru'] = {'cr':0}
+
+    #     name =['a','e','q']
+    #     num = [na,ne,1]
+
+    #     for i in range(3):
+    #         tmp[name[i]] = dict()
+    #         tmp[name[i]]['n'] = na
+    #         tmp[name[i]]['atk_type'] = ''
+    #         for j in range(1,num[i]+1):
+    #             tmp[name[i]]['ratio_'+str(j)] =()
+    #         tmp[name[i]]['time'] = (0,)*num[i]
+
+    #     tmp['a']['atk_type'] = 'physic'
+    #     tmp['e']['reset_a'] = 'no'
+    #     tmp['q']['reset_a'] = 'yes'
+
+    #     with open(path, 'w') as fp:
+    #         json.dump(tmp, fp,indent = 4)

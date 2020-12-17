@@ -14,21 +14,23 @@ class Env():
     def __init__(self):
         self.timer = 0
     def set_endtime(self,simtime):
-        self.simtime = simtime
+        self.simtime = int(simtime*100)
     def end(self):
         return (self.timer>self.simtime)
     def now(self):
-        return(round(self.timer,2))
+        return(round(self.timer/100,2))
     def add(self,dif):
-        # self.timer+=round(dif,2)
-        return(self.timer+round(dif,2))
+        return(round(self.timer/100,2)+dif)
     def tick(self,dif):
-        self.timer+=round(dif,2)
+        self.timer+=int(dif*100)
+    def on_time(self,v):
+        return(int(v*100)<=self.timer)
 
-
-
-
-
+    # def over_time(self,v):
+    #     return(int(v*100)>self.timer)
+    
+    def over_time(self,v):
+        return(int(v*100)<self.timer)
 
 if __name__ == "__main__":
 
@@ -44,7 +46,7 @@ if __name__ == "__main__":
 
 
     env = Env()
-    env.set_endtime(20)
+    env.set_endtime(100)
 
     diluc = character(6,6,logger)
     diluc.load_from_json("./data/diluc.json")
@@ -78,9 +80,13 @@ if __name__ == "__main__":
     #     else:
     #         pass
     #         logger.info("no e avail {} {:.2f}".format(i,env.now()))
-    for j in range(2):
+    for j in range(10):
         for i in range(len(diluc.action_seq)):
             action = diluc.action_seq[i]
+            if action=='w':
+                env.tick(0.2)
+                logger.info("wait 0.2s")
+                continue
             while True:
                 if diluc.atk_ready(env,[action]):
                     break

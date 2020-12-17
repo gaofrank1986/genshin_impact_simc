@@ -116,18 +116,10 @@ class character(Basic_Panel):
             path_to_file = os.path.join(directory, file)
             os.remove(path_to_file)
         #----------
-
+        self.init_buff_logger
         for i in self.buff_stack:
-                tmp = logging.getLogger('Log.'+i.name)
-                fh = logging.FileHandler('./tmp/'+i.name+'_buff.log','w+')
-                fmt = logging.Formatter("%(asctime)s — %(levelname)s — %(message)s",datefmt='%m-%d,%H:%M')
-                fh.setFormatter(fmt)
-                tmp.addHandler(fh)
-                tmp.propagate = False
-                i.logger = tmp
-                # i.logger.setLevel(logging.DEBUG)
-                i.logger.setLevel(logging.INFO)
-                i.logger.info(i.cmt)
+            self.init_buff_logger(i)
+
 
         '''改变相应的控制开关'''
         for i in data['switch']:
@@ -197,56 +189,38 @@ class character(Basic_Panel):
                         self.load_att(tmp['special'][i][1])
                         self.activated_buff.append(i)
 
-    #----------------------------------------------------------------------------------
-    #----------------------------------------------------------------------------------
-    #----------------------------------------------------------------------------------
-
-
-
-
-    # def json_generator(self,path,na,ne):
-    #     tmp = dict()
-    #     tmp['name'] = ''
-    #     tmp['level'] = ''
-    #     tmp['elem_class'] = ''
-    #     tmp['constellation'] = ''
-
-    #     tmp['basic_health'] = 0
-    #     tmp['basic_attack'] = 0
-    #     tmp['basic_defense'] = 0
-    #     tmp['break_thru'] = {'cr':0}
-
-    #     name =['a','e','q']
-    #     num = [na,ne,1]
-
-    #     for i in range(3):
-    #         tmp[name[i]] = dict()
-    #         tmp[name[i]]['n'] = na
-    #         tmp[name[i]]['atk_type'] = ''
-    #         for j in range(1,num[i]+1):
-    #             tmp[name[i]]['ratio_'+str(j)] =()
-    #         tmp[name[i]]['time'] = (0,)*num[i]
-
-    #     tmp['a']['atk_type'] = 'physic'
-    #     tmp['e']['reset_a'] = 'no'
-    #     tmp['q']['reset_a'] = 'yes'
-
-    #     with open(path, 'w') as fp:
-    #         json.dump(tmp, fp,indent = 4)
 
 
     #----------------------------------------------------------------------------------
     #----------------------------------------------------------------------------------
     #----------------------------------------------------------------------------------
 
-    def damage_output(self):
-        tmp1 = self.attack[0]*(1+self.attack[1]/100)+self.attack[2]
+    def damage_output(self,ans,atk_type):
+        assert(isinstance(ans,dict))
+        atk = deepcopy(self.attack)
+        for i in ans:
+            if i in self.att_name:
+                atk[self.att_name.index(i)]+=ans[i]
+            else:
+                pass
+                # self.main_logger.info("{} {}is not loaded to the character".format(i,ans[i]))        
+        
+        #第一乘区
+        self.main_logger.info(ans)
+        area1 = atk[0]*(1+atk[1]/100)+atk[2]
+        #第二乘区
         if self.attack[3]>100:#暴击率不超过1
-            tmp2 = 1 + 1*self.attack[4]/100
+            area2 = 1 + 1*atk[4]/100
         else:
-            tmp2 = 1 + self.attack[3]/100*self.attack[4]/100
-        tmp3 = 1 + self.attack[5]/100
-        return(tmp1*tmp2*tmp3)
+            area2 = 1 + atk[3]/100*atk[4]/100
+        #第三乘区
+        area3 = 1 + atk[5]/100
+        for i in ans:
+            if i in ['ed','alld',atk_type]:
+                area3 += ans[i]/100
+                self.main_logger.info("{} {} is applied".format(i,ans[i]))
+            
+        return(area1*area2*area3)
 
     def check_e_time_out(self):
         # if self.skill[atk_typ]['n']>1 and time_out(env)
@@ -292,7 +266,7 @@ class character(Basic_Panel):
 
 
 
-        D=self.damage_output() #计算总伤害
+        D=self.damage_output(ans,atk_type) #计算总伤害
 
         if self.acc[atk_type]==self.skill[atk_type][0]: # 如果多段攻击已经累积数目达到最大重置计数
             self.acc[atk_type]=0

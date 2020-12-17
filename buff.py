@@ -46,7 +46,7 @@ class Buff():
         self.MAX_B = 10#最高存储10层
 
     def record(self,env):
-        ans = [self.start_time[-1],self.end_time[-1],self.next_avail,self.next_chckout[-1],env.timer,0]
+        ans = [self.start_time[-1],self.end_time[-1],self.next_avail,self.next_chckout[-1],env.now(),0]
         ans = np.array(ans)
         ans = np.round(ans,2)
         return(ans)
@@ -58,7 +58,8 @@ class Buff():
 
     def check_status(self,env):
         while True:
-            if len(self.start_time)!=0 and env.now()>self.end_time[0]:
+            # if len(self.start_time)!=0 and env.now()>self.end_time[0]:
+            if len(self.start_time)!=0 and env.over_time(self.end_time[0]):
                 self.logger.info("Buff状态检查 有效期结束 第一层Buff失效,开始时间: {:.2f} 结束时间 {:.2f} 当前时间 {:.2f} ".format(self.start_time[0],self.end_time[0],env.now()))
                 # self.expired.append((self.start_time,self.end_time,env.timer))
                 # tmp = self.valid.pop(0)
@@ -192,7 +193,7 @@ class Buff():
                     if len(self.next_chckout) == 0:
                         self.next_chckout.append(env.now())
                     '''如果可结算 而且 当前时间大于可结算时间(最新？)'''
-                    if len(self.next_chckout) >0 and env.now()>=self.next_chckout[0]:#if不是尺骨剑
+                    if len(self.next_chckout) >0 and env.on_time(self.next_chckout[0]):#if不是尺骨剑
 
 
                         if self.prop['chckout_evnt'] == 'auto':
