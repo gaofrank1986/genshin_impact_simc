@@ -9,16 +9,15 @@
 1. diluc 各项效果校对
 2. diluc 伤害重写及调试
 3. 武器信息加载
-4. 人物攻击序列校对，空白用a补充
-5. 人物信息增加强制保证技能间隔（四命使用）
+4. 圣遗物信息加载
+5. 人物攻击序列校对，空白用a补充
+6. 人物信息增加强制保证技能间隔（四命使用）
 
 
 
 待完成：
 
-1. 圣遗物信息加载
 
---------
 
 使用说明：
 
@@ -31,8 +30,11 @@
 ```python
     cycle = 10
     diluc = character(6,6,logger)
+    a = Articraft()
+    
     diluc.load_from_json("./data/diluc.json")
     diluc.load_weapon_from_json("./data/claymore.json","lm")
+    a.load_json("./data/articraft.json")
 
 ```
 

@@ -4,10 +4,10 @@ import pickle
 from copy import deepcopy
 import logging
 from buff import Buff
-from basic import Basic_Panel,relics,weapon
+from basic import Basic_Panel
 import os
 
-class character(Basic_Panel):
+class Character(Basic_Panel):
     def __init__(self,skill_level,c_level,main_logger):
         assert(isinstance(main_logger,logging.Logger))
         super().__init__()
@@ -52,15 +52,15 @@ class character(Basic_Panel):
 
 
 
-    # def equip(self,a):
-    #     self.health = self.health+a.health
-    #     self.attack = self.attack+a.attack
-    #     self.defense = self.defense+a.defense
+    def put_on(self,a):
+        self.health = self.health+a.health
+        self.attack = self.attack+a.attack
+        self.defense = self.defense+a.defense
 
-    # def de_equip(self,a):
-    #     self.health = self.health-a.health
-    #     self.attack = self.attack-a.attack
-    #     self.defense = self.defense-a.defense
+    def take_off(self,a):
+        self.health = self.health-a.health
+        self.attack = self.attack-a.attack
+        self.defense = self.defense-a.defense
 
     def add_buff(self,b):
         # self.buff_stack.append(deepcopy(b))
@@ -172,28 +172,37 @@ class character(Basic_Panel):
     #----------------------------------------------------------------------------------
     #----------------------------------------------------------------------------------
 
-    def load_weapon_from_json(self,path):
+    def load_weapon_from_json(self,path,name):
 
-        with open(path, 'r') as fp:
-            tmp = json.load(fp)
+        with open(path, 'r', encoding='UTF-8') as fp:
+            data = json.load(fp)
+        found = False
+        
+        for wp in data:
+            if wp == name:
+                found = True
+                self.equipment.append((data[wp]['name'],data[wp]['refine']))
+                self.attack[0] += data[wp]['basic_attack']
+                self.load_att(data[wp]['effect'])
 
-        self.equipment.append((tmp['name'],tmp['refine']))
-        self.attack[0] += tmp['basic_attack']
-        self.load_att(tmp['effect'])
+                '''加载激活的buff'''
+                for i in data[wp]['special'].keys():
+                        if len(data[wp]['special'][i][0])!=0:
+                            self.main_logger.info("加载 2类 {} {} {} ".format(data[wp]['name'],"武器效果",data[wp]['special'][i][2]))
+                            self.add_buff(Buff(data[wp]['special'][i][0],data[wp]['special'][i][1],"{}_{}".format(data[wp]['name'],"武器效果"),data[wp]['special'][i][2]))
+                            self.buff_stack[-1].logger = self.init_buff_logger('Buff.'+self.buff_stack[-1].name,'./tmp/'+self.buff_stack[-1].name+'_buff.log')
+                            self.buff_stack[-1].logger.setLevel(logging.INFO)
+                            self.buff_stack[-1].logger.info(i.cmt)
+                            self.activated_buff.append(i)
 
-        '''加载激活的buff'''
-        for i in tmp['special'].keys():
-                if len(tmp['special'][i][0])!=0:
-                    print("加载 2类 {} {} {} ".format(tmp['name'],"武器效果",tmp['special'][i][2]))
-                    self.add_buff(Buff(tmp['special'][i][0],tmp['special'][i][1],"{}_{}".format(tmp['name'],"武器效果"),tmp['special'][i][2]))
-                    self.init_buff_logger(self.buff_stack[-1])
-                    self.activated_buff.append(i)
-
-                else:
-                    if len(tmp['special'][i][1])!=0:
-                        print("加载 1类 {} {} {} ".format(tmp['name'],"武器效果",tmp['special'][i][2]))
-                        self.load_att(tmp['special'][i][1])
-                        self.activated_buff.append(i)
+                        else:
+                            if len(data[wp]['special'][i][1])!=0:
+                                self.main_logger.info("加载 1类 {} {} {} ".format(data[wp]['name'],"武器效果",data[wp]['special'][i][2]))
+                                self.load_att(data[wp]['special'][i][1])
+                                self.activated_buff.append(i)
+        assert(found)
+        # if not(found):
+        #     raise WeapnNotFoundError
 
 
 
@@ -201,21 +210,18 @@ class character(Basic_Panel):
     #----------------------------------------------------------------------------------
     #----------------------------------------------------------------------------------
 
-    def damage_output(self,ans,atk_type):
+    def damage_output(self,ans,atk_type,ctl=False):
         assert(isinstance(ans,dict))
         atk = deepcopy(self.attack)
         
-        self.dlogger.debug("----------------------{}---------------------------".format(atk_type))
  
         for i in ans:
             if i in self.att_name:
                 atk[self.att_name.index(i)]+=ans[i]
             else:
                 pass
-                # self.main_logger.info("{} {}is not loaded to the character".format(i,ans[i]))        
         
         #第一乘区
-        self.dlogger.debug(ans)
         area1 = atk[0]*(1+atk[1]/100)+atk[2]
         #第二乘区
         if self.attack[3]>100:#暴击率不超过1
@@ -225,18 +231,25 @@ class character(Basic_Panel):
         #第三乘区
         area3 = 1 + atk[5]/100
         
-        self.dlogger.debug("现有第一区{} 最终第一区{}".format(self.attack[0:3],atk[0:3]))
-        self.dlogger.debug("现有第二区{} 最终第二区{}".format(self.attack[3:5],atk[3:5]))
-
-        self.dlogger.debug("现有第三区{:.2f}".format(area3))
+        if ctl:
+            self.dlogger.debug("----------------------{}---------------------------".format(atk_type))    
+            self.dlogger.debug(ans)
+            self.dlogger.debug("现有第一区{} 最终第一区{}".format(self.attack[0:3],atk[0:3]))
+            self.dlogger.debug("现有第二区{} 最终第二区{}".format(self.attack[3:5],atk[3:5]))
+            self.dlogger.debug("现有第三区{:.2f}".format(area3))
 
         for i in ans:
             if i in ['ed','alld',atk_type]:
                 area3 += ans[i]/100
-        self.dlogger.debug("最终第三区{:.2f}".format(area3))
-        self.dlogger.debug("无倍率期望输出 {:.2f}".format(area1*area2*area3))
+        
+        if ctl:
+            self.dlogger.debug("最终第三区{:.2f}".format(area3))
+            self.dlogger.debug("无倍率期望输出 {:.2f}".format(area1*area2*area3))
+            
         return(area1*area2*area3)
 
+
+    #===============================================================================================
     def check_e_time_out(self):
         # if self.skill[atk_typ]['n']>1 and time_out(env)
         #  self.acc[atk_type]=0
@@ -279,7 +292,7 @@ class character(Basic_Panel):
             ele = 0
         
 
-        D=self.damage_output(ans,atk_type) #计算总伤害
+        D=self.damage_output(ans,atk_type,True) #计算总伤害
 
         if self.acc[atk_type]==self.skill[atk_type][0]: # 如果多段攻击已经累积数目达到最大重置计数
             self.acc[atk_type]=0
@@ -317,6 +330,7 @@ class character(Basic_Panel):
 
         self.last_atk[atk_type] = env.now()
         env.tick(lapse) #环境时间更新，迭代量为技能时间
+        self.dmg[['a','h','e','q'].index(atk_type)]+=round(D,2)
 
         # '''TODO a 释放完超过一定时间多段攻击会被重置         '''
         if atk_type=='q':
