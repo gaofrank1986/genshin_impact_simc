@@ -15,6 +15,8 @@ class Env():
         self.timer = 0
     def set_endtime(self,simtime):
         self.simtime = int(simtime*100)
+    def set(self,t):
+        self.timer = int(t*100)
     def end(self):
         return (self.timer>self.simtime)
     def now(self):
@@ -26,8 +28,8 @@ class Env():
     def on_time(self,v):
         return(int(v*100)<=self.timer)
 
-    # def over_time(self,v):
-    #     return(int(v*100)>self.timer)
+    def not_yet(self,v):
+        return(int(v*100)>self.timer)
     
     def over_time(self,v):
         return(int(v*100)<self.timer)
@@ -83,10 +85,17 @@ if __name__ == "__main__":
     for j in range(10):
         for i in range(len(diluc.action_seq)):
             action = diluc.action_seq[i]
-            if action=='w':
-                env.tick(0.2)
-                logger.info("wait 0.2s")
-                continue
+            # if action=='w':
+            #     env.tick(0.2)
+            #     logger.info("wait 0.2s")
+            #     continue
+            if len(diluc.guarantee_gap)>0 and action in diluc.guarantee_gap and diluc.acc['e']>0:
+                # if(env.now()<diluc.last_atk[action]+diluc.guarantee_gap[action]):
+                next_time = diluc.last_atk[action]+diluc.guarantee_gap[action]
+                if(env.not_yet(next_time)):
+                    logger.info("Time tick {:.2f} to guarantee gap for {}".format(next_time-env.now(),action))
+                    env.set(diluc.last_atk[action]+diluc.guarantee_gap[action])
+                    
             while True:
                 if diluc.atk_ready(env,[action]):
                     break

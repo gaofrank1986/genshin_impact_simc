@@ -30,6 +30,7 @@ class character(Basic_Panel):
         # self.e_time_out = 3 #迪卢克多段e间隔时间
         self.e_count = 0
         self.e_save = None
+        self.guarantee_gap = None
         #------------------
         self.equipment=[]
 
@@ -40,6 +41,7 @@ class character(Basic_Panel):
 
         self.acc ={'e':0,'a':0,'q':0}
         self.next_atk = {'e':0.0,'a':0.0,'q':0.0}
+        self.last_atk = {'e':0.0,'a':0.0,'q':0.0}
 
         # self.status['e'] = 'on'
 
@@ -118,8 +120,14 @@ class character(Basic_Panel):
         #----------
         self.init_buff_logger
         for i in self.buff_stack:
-            self.init_buff_logger(i)
+            
+            i.logger = self.init_buff_logger('Buff.'+i.name,'./tmp/'+i.name+'_buff.log')
+            # i.logger.setLevel(logging.DEBUG)
+            i.logger.setLevel(logging.INFO)
+            i.logger.info(i.cmt)
 
+        self.dlogger = self.init_buff_logger('Dmg','./tmp/damage.log')
+        self.dlogger.setLevel(logging.DEBUG)
 
         '''改变相应的控制开关'''
         for i in data['switch']:
@@ -131,21 +139,19 @@ class character(Basic_Panel):
         self.multiple_e = data['multiple_e']
         if self.multiple_e > 1:
             self.e_save = [0.0]*(self.multiple_e-1)
-
+        self.guarantee_gap = data["guarantee_gap"]
         self.action_seq = data['attack_seq']
 
-    def init_buff_logger(self,i):
-        assert(isinstance(i,Buff))
-        tmp = logging.getLogger('Buff.'+i.name)
-        fh = logging.FileHandler('./tmp/'+i.name+'_buff.log','w+')
+    def init_buff_logger(self,a,b):
+        # assert(isinstance(i,Buff))
+        tmp = logging.getLogger(a)
+        fh = logging.FileHandler(b,'w+')
         fmt = logging.Formatter("%(asctime)s — %(levelname)s — %(message)s",datefmt='%m-%d,%H:%M')
         fh.setFormatter(fmt)
         tmp.addHandler(fh)
         tmp.propagate = False
-        i.logger = tmp
-        # i.logger.setLevel(logging.DEBUG)
-        i.logger.setLevel(logging.INFO)
-        i.logger.info(i.cmt)
+
+        return tmp
 
 
     def load_att(self,info):
@@ -198,6 +204,9 @@ class character(Basic_Panel):
     def damage_output(self,ans,atk_type):
         assert(isinstance(ans,dict))
         atk = deepcopy(self.attack)
+        
+        self.dlogger.debug("----------------------{}---------------------------".format(atk_type))
+ 
         for i in ans:
             if i in self.att_name:
                 atk[self.att_name.index(i)]+=ans[i]
@@ -206,7 +215,7 @@ class character(Basic_Panel):
                 # self.main_logger.info("{} {}is not loaded to the character".format(i,ans[i]))        
         
         #第一乘区
-        self.main_logger.info(ans)
+        self.dlogger.debug(ans)
         area1 = atk[0]*(1+atk[1]/100)+atk[2]
         #第二乘区
         if self.attack[3]>100:#暴击率不超过1
@@ -215,11 +224,17 @@ class character(Basic_Panel):
             area2 = 1 + atk[3]/100*atk[4]/100
         #第三乘区
         area3 = 1 + atk[5]/100
+        
+        self.dlogger.debug("现有第一区{} 最终第一区{}".format(self.attack[0:3],atk[0:3]))
+        self.dlogger.debug("现有第二区{} 最终第二区{}".format(self.attack[3:5],atk[3:5]))
+
+        self.dlogger.debug("现有第三区{:.2f}".format(area3))
+
         for i in ans:
             if i in ['ed','alld',atk_type]:
                 area3 += ans[i]/100
-                self.main_logger.info("{} {} is applied".format(i,ans[i]))
-            
+        self.dlogger.debug("最终第三区{:.2f}".format(area3))
+        self.dlogger.debug("无倍率期望输出 {:.2f}".format(area1*area2*area3))
         return(area1*area2*area3)
 
     def check_e_time_out(self):
@@ -262,9 +277,7 @@ class character(Basic_Panel):
         else:
             speed = 0
             ele = 0
-
-
-
+        
 
         D=self.damage_output(ans,atk_type) #计算总伤害
 
@@ -277,6 +290,7 @@ class character(Basic_Panel):
 
         ratio = self.skill[atk_type][1][pos] #读取倍率
         lapse = 1/((1/self.skill[atk_type][2][pos])*(1+speed/100))#计算消耗时间，平a计入攻速考虑
+        D = D*ratio/100
 
         if self.acc[atk_type] == 1: #对于多段攻击，只有初始时候激发cd,参考姥爷 e 3段数， 平a目前不影响，因为cd=0
             if atk_type in ['q','a']:
@@ -301,6 +315,7 @@ class character(Basic_Panel):
         else:
             logger.info("{} {}计数: {},start: {:.2f} ,元素属性 {}, s= {},输出方式 {} D= {:.2f} 倍率 {:.2f} 消耗时间 {:.2f} 冷却到期:{:.2f} 攻速: {}".format(self.name,atk_type,self.acc[atk_type],env.now(),ele,s,N,D,ratio,lapse,self.next_atk[atk_type],speed))
 
+        self.last_atk[atk_type] = env.now()
         env.tick(lapse) #环境时间更新，迭代量为技能时间
 
         # '''TODO a 释放完超过一定时间多段攻击会被重置         '''

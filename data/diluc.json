@@ -59,6 +59,7 @@
     },
     "e_time_out": 3,
     "multiple_e": 1,
-    "attack_seq":"eaaeaaeaaq"
+    "attack_seq":"eaaeaaeaaq",
+    "guarantee_gap":{"e":2}
 
 }
