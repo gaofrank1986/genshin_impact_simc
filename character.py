@@ -193,7 +193,7 @@ class Character(Basic_Panel):
                             self.add_buff(Buff(data[wp]['special'][i][0],data[wp]['special'][i][1],"{}_{}".format(data[wp]['name'],"武器效果"),data[wp]['special'][i][2]))
                             self.buff_stack[-1].logger = self.init_buff_logger('Buff.'+self.buff_stack[-1].name,'./tmp/'+self.buff_stack[-1].name+'_buff.log')
                             self.buff_stack[-1].logger.setLevel(logging.INFO)
-                            self.buff_stack[-1].logger.info(i.cmt)
+                            self.buff_stack[-1].logger.info(self.buff_stack[-1].cmt)
                             self.activated_buff.append(i)
 
                         else:
@@ -201,17 +201,49 @@ class Character(Basic_Panel):
                                 self.main_logger.info("加载 1类 {} {} {} ".format(data[wp]['name'],"武器效果",data[wp]['special'][i][2]))
                                 self.load_att(data[wp]['special'][i][1])
                                 self.activated_buff.append(i)
+                break
         assert(found)
         # if not(found):
         #     raise WeapnNotFoundError
 
+    def load_articraft_effect(self,name):
+        
+        path ="./data/articraft_effects.json"
 
+        with open(path, 'r', encoding='UTF-8') as fp:
+            data = json.load(fp)
+        found = False
+        
+        for wp in data:
+            if wp == name:
+                found = True
+                self.equipment.append(data[wp]['name'])
+
+                '''加载激活的buff'''
+                for i in data[wp]['special'].keys():
+                        if len(data[wp]['special'][i][0])!=0:
+                            self.main_logger.info("加载 2类 {} {} {} ".format(data[wp]['name'],"圣遗物效果",data[wp]['special'][i][2]))
+                            self.add_buff(Buff(data[wp]['special'][i][0],data[wp]['special'][i][1],"{}_{}".format(data[wp]['name'],"圣遗物效果"),data[wp]['special'][i][2]))
+                            self.buff_stack[-1].logger = self.init_buff_logger('Buff.'+self.buff_stack[-1].name,'./tmp/'+self.buff_stack[-1].name+'_buff.log')
+                            self.buff_stack[-1].logger.setLevel(logging.INFO)
+                            self.buff_stack[-1].logger.info(self.buff_stack[-1].cmt)
+                            self.activated_buff.append(i)
+
+                        else:
+                            if len(data[wp]['special'][i][1])!=0:
+                                self.main_logger.info("加载 1类 {} {} {} ".format(data[wp]['name'],"圣遗物效果",data[wp]['special'][i][2]))
+                                self.load_att(data[wp]['special'][i][1])
+                                self.activated_buff.append(i)
+                break
+        assert(found)
+        # if not(found):
+        #     raise WeapnNotFoundError
 
     #----------------------------------------------------------------------------------
     #----------------------------------------------------------------------------------
     #----------------------------------------------------------------------------------
 
-    def damage_output(self,ans,atk_type,ctl=False):
+    def damage_output(self,ans,atk_type,ele,ctl=False):
         assert(isinstance(ans,dict))
         atk = deepcopy(self.attack)
         
@@ -230,23 +262,37 @@ class Character(Basic_Panel):
         else:
             area2 = 1 + atk[3]/100*atk[4]/100
         #第三乘区
-        area3 = 1 + atk[5]/100
-        
-        if ctl:
-            self.dlogger.debug("----------------------{}---------------------------".format(atk_type))    
-            self.dlogger.debug(ans)
-            self.dlogger.debug("现有第一区{} 最终第一区{}".format(self.attack[0:3],atk[0:3]))
-            self.dlogger.debug("现有第二区{} 最终第二区{}".format(self.attack[3:5],atk[3:5]))
-            self.dlogger.debug("现有第三区{:.2f}".format(area3))
+        if ele != 'physic':
+            area3 = 1 + atk[5]/100
+            
+            if ctl:
+                self.dlogger.debug("----------------------{}---------------------------".format(atk_type))    
+                self.dlogger.debug(ans)
+                self.dlogger.debug("现有第一区{} 最终第一区{}".format(self.attack[0:3],atk[0:3]))
+                self.dlogger.debug("现有第二区{} 最终第二区{}".format(self.attack[3:5],atk[3:5]))
+                self.dlogger.debug("现有第三区{:.2f}".format(area3))
 
-        for i in ans:
-            if i in ['ed','alld',atk_type]:
-                area3 += ans[i]/100
+            for i in ans:
+                if i in ['ed','alld',atk_type]:
+                    area3 += ans[i]/100
+        else:
+            area3 = 1
+            if ctl:
+                self.dlogger.debug("----------------------{}---------------------------".format(atk_type))    
+                self.dlogger.debug(ans)
+                self.dlogger.debug("现有第一区{} 最终第一区{}".format(self.attack[0:3],atk[0:3]))                
+                self.dlogger.debug("现有第二区{} 最终第二区{}".format(self.attack[3:5],atk[3:5]))
+                self.dlogger.debug("现有第三区{:.2f}".format(area3)) 
+                   
+            for i in ans:    
+                if i in ['alld',atk_type]:                
+                    area3 += ans[i]/100
         
         if ctl:
             self.dlogger.debug("最终第三区{:.2f}".format(area3))
             self.dlogger.debug("无倍率期望输出 {:.2f}".format(area1*area2*area3))
-            
+        
+
         return(area1*area2*area3)
 
 
@@ -267,7 +313,7 @@ class Character(Basic_Panel):
         s=0
 
         ans=dict()
-        activate_evnts = ['hitted']
+        activate_evnts = ['hitted','auto']
         activate_evnts.append(atk_type)
         chckout_evnts = ['auto']
         chckout_evnts.append(atk_type)
@@ -297,7 +343,7 @@ class Character(Basic_Panel):
             ele = self.atk_elem(atk_type)
         
 
-        D=self.damage_output(ans,atk_type,True) #计算总伤害
+        D=self.damage_output(ans,atk_type,ele,True) #计算总伤害
 
         if self.acc[atk_type]==self.skill[atk_type][0]: # 如果多段攻击已经累积数目达到最大重置计数
             self.acc[atk_type]=0
@@ -350,11 +396,12 @@ class Character(Basic_Panel):
         # '''姥爷3段e,每一段之间空档期有限制，没有编入程序'''
         return()
 
-    def atk_ready(self,env,alist):
+    def atk_ready(self,env,alist,mode=1):
         for i in alist:
-            if self.acc[i] < self.skill[i][0]:
-                return True
-            elif env.now()>=self.next_atk[i]:
+            if mode == 1:
+                if self.acc[i] < self.skill[i][0]: #这个不对
+                    return True
+            if env.now()>=self.next_atk[i]:
                 return True
             else:
                 pass

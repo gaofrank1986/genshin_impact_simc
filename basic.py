@@ -36,7 +36,7 @@ class Basic_Panel():
         self.health = np.zeros(3)
         self.attack = np.zeros(9)
         self.defense = np.zeros(3)
-        self.att_name = ['ba','ar','sa','cr','cd','edr','phr','em','ef']
+        self.att_name = ['ba','ar','sa','cr','cd','ed','pd','em','ef']
         self.h_name = ['bh','hr','sh']
         self.d_name = ['bd','dr','sd']
         # self.enhance_rate = np.zeros(9) #7元素 1物理 1全伤
