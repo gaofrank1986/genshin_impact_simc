@@ -13,7 +13,7 @@
 5. 人物攻击序列校对，空白用a补充
 6. 人物信息增加强制保证技能间隔（四命使用）
 
-
+-------
 
 待完成：
 
@@ -21,7 +21,7 @@ Buff对象重新梳理
 
 
 
-
+---------------------------
 
 使用说明：
 
@@ -32,23 +32,14 @@ Buff对象重新梳理
 
 
 ```python
-    cycle = 10
-    diluc = character(6,6,logger)
-    a = Articraft()
-    
-    diluc.load_from_json("./data/diluc.json")
-    diluc.load_weapon_from_json("./data/claymore.json","lm")
-    a.load_json("./data/articraft.json")
+    cycle = 20 #最大攻击序列循环
+    end_time = 15 #最大模拟时间
+    skill_level = 6 #技能等级
+    constellation = 6 #命座
+    weapon ="lm" #武器
+    character = "diluc" #角色
 
 ```
-
-主程序需要设定位置
-
-cycle = 攻击序列循环次数
-
-character(技能等级，命座（1-6），logger)
-
-diluc.json 人物信息json
 
 ------------------------
 
